@@ -11,16 +11,15 @@ pipeline {
         stage('Construcción') {
             steps {
                 echo 'Construyendo la imagen Docker...'
-                // Construye la imagen usando el Dockerfile (usamos 'bat' para Windows)
                 bat 'docker build -t %IMAGE_NAME%:latest .'
             }
         }
 
         stage('Pruebas') {
             steps {
-                echo 'Ejecutando pruebas de sintaxis y seguridad base...'
-                // Prueba simple para verificar que el código Python no tiene errores
-                bat 'python -m py_compile vulnerable_app.py'
+                echo 'Ejecutando pruebas de sintaxis dentro del contenedor...'
+                // Usamos docker run para que la prueba corra dentro de la imagen aislada
+                bat 'docker run --rm %IMAGE_NAME%:latest python -m py_compile vulnerable_app.py'
                 
                 echo 'Pruebas finalizadas con éxito.'
             }
@@ -29,7 +28,7 @@ pipeline {
         stage('Despliegue') {
             steps {
                 echo 'Desplegando la aplicación en el entorno de producción (Docker)...'
-                // Detener y eliminar el contenedor anterior si existe (evita errores)
+                // Detener y eliminar el contenedor anterior si existe (evita errores en despliegues continuos)
                 bat '''
                     docker stop %CONTAINER_NAME% || exit 0
                     docker rm %CONTAINER_NAME% || exit 0
